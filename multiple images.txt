@@ -1,0 +1,85 @@
+....................................Add Project Image........................
+ <div class="form-group">
+       <label for="exampleInputImage1">Select Multiple Images</label>
+        <div class="input-images"></div>
+ </div>
+
+<script type="text/javascript" src="{{asset('public/imageUploader/image-uploader.min.js')}}"></script>
+<script>
+    $('.input-images').imageUploader();
+</script>
+
+
+
+
+.................................Add project iMage Controller ....................
+    if($request->hasFile("images")){
+            $files=$request->file("images");
+            foreach($files as $file){
+                $imageName=time().rand(0000, 9999).'.'.$file->getClientOriginalExtension();
+                $request['product_id']=$products->id;
+                $request['images']=$imageName;
+                $file->move(\public_path("/assets/images/product/"),$imageName);
+                ProductImages::create([
+                    'image' => $imageName,
+                    'product_id' => $products->id
+                ]);
+            }
+        }
+
+...............................Edit Image ..................................
+
+  <div class="form-group">
+    <label for="exampleInputImage1">Select Multiple Images</label>
+    <div class="input-images"></div>
+ </div>
+<script type="text/javascript" src="{{asset('public/imageUploader/image-uploader.min.js')}}"></script>
+<script>
+    var ImgArray = <?php echo $data->images ?>;
+    let preloaded = [
+        @foreach($data->images as $img)
+           {id: {{$img->id}}, src: "{{$img->image}}" },
+        @endforeach
+ ];
+
+$('.input-images').imageUploader({
+    preloaded: preloaded,
+    imagesInputName: 'images',
+    preloadedInputName: 'old'
+});
+</script>
+
+........................Edit Project Image Controller ..,..............................
+
+ public function editPro($id)
+    {
+        $data = Product::where('id', $id)->with('images')->first();
+        return view('admin/pages/editProduct',['data'=>$data]);
+    }
+
+ public function update(Request $request)
+    {
+        $input = $request->all();
+        $products = Product::with('images')->find($request->id);
+        if($request->old){
+           ProductImages::whereNotIn('id', $request->old)->where('product_id',$request->id)->delete(); 
+        }
+        
+        if($request->hasFile("images")){
+            $files=$request->file("images");
+            foreach($files as $file){
+                $imageName=time().rand(0000, 9999).'.'.$file->getClientOriginalExtension();
+                $request['product_id']=$products->id;
+                $request['images']=$imageName;
+                $file->move(\public_path("/assets/images/product/"),$imageName);
+                ProductImages::create([
+                    'image' => $imageName,
+                    'product_id' => $products->id
+                ]);
+            }
+        }
+        $update = $products->update($input);
+        return back()->with('success','Product Updated successfully!');
+    }
+
+
